@@ -7,7 +7,6 @@ class Node (object):
         #outputs of this node
         self.outbound_nodes  = []
 
-
         #for each input node, add this node as an outbound node
         for n in self.inbound_nodes:
             n.outbound_nodes.append(self)
@@ -42,7 +41,7 @@ class Add(Node):
         Node.__init__(self,[x,y])
 
     def forward(self):
-        raise NotImplemented
+        self.value = sum([n.value for n in self.inbound_nodes])
 
 def topological_sort(feed_dict):
     '''
@@ -64,7 +63,6 @@ def topological_sort(feed_dict):
                 G[m] = {"in":set(), "out":set()}
             G[n]['out'].add(m)
             G[m]['in'].add(n)
-    
 
     S = set(input_nodes) #nodes with no incoming edge
     L = [] # sorted list of nodes
@@ -79,20 +77,13 @@ def topological_sort(feed_dict):
         L.append(n)
 
         #look at all children of n... for each, if n is it's only parent, remove the link and add it to S
-        while len(G[n]['out'] > 0):
+        while len(G[n]['out']) > 0:
             m = G[n]['out'].pop()
             G[m]['in'].remove(n)
-            if len(G[m]['in'] == 0):
+            if len(G[m]['in']) == 0:
                 S.add(m) 
 
     return L
-
-
-
-            
-
-    
-
 
 def forward_pass(output_node, sorted_nodes):
     '''
