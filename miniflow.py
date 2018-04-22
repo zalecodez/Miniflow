@@ -1,3 +1,4 @@
+import numpy as np
 class Node (object):
     def __init__(self, inbound_nodes=[]):
 
@@ -37,11 +38,63 @@ class Input(Node):
 
 
 class Add(Node):
-    def __init__(self, x, y):
-        Node.__init__(self,[x,y])
+    def __init__(self, *inputs):
+        Node.__init__(self, inputs)
 
     def forward(self):
         self.value = sum([n.value for n in self.inbound_nodes])
+
+class Mul(Node):
+    def __init__(self, *inputs):
+        Node.__init__(self, inputs)
+
+    def forward(self):
+        self.value = 1
+        for n in self.inbound_nodes:
+            self.value *= n
+
+class Linear(Node):
+    def __init__(self, inputs, weights, bias):
+        Node.__init__(self, [inputs, weights, bias])
+
+    def forward(self):
+        inputs = self.inbound_nodes[0].value
+        weights = self.inbound_nodes[1].value
+        bias = self.inbound_nodes[2].value
+
+        self.value = np.dot(inputs, weights) + bias
+
+class Sigmoid(Node):
+    def __init__(self, node):
+        Node.__init__(self, [node])
+    
+        self.value = 8
+    def _sigmoid(self, x):
+        x = 1./(1+np.exp(-x))
+        return x
+
+    def forward(self):
+        x = self.inbound_nodes[0].value
+        self.value = self._sigmoid(x)
+        
+class MSE(Node):
+    def __init__(self, y, a):
+        Node.__init__(self, [y,a])
+
+    def forward(self):
+        y = self.inbound_nodes[0].value.reshape(-1,1)
+        a = self.inbound_nodes[1].value.reshape(-1,1)
+
+        self.value = np.mean(np.square(y - a))
+
+def forward_pass(output_node, sorted_nodes):
+    '''
+    Performs a forward pass through the list of sorted nodes
+    '''
+    for n in sorted_nodes:
+        n.forward()
+    return output_node.value
+
 
 def topological_sort(feed_dict):
     '''
@@ -59,6 +112,7 @@ def topological_sort(feed_dict):
         if n not in G:
             G[n] = {"in":set(), "out":set()}
         for m in n.outbound_nodes:
+            nodes.append(m)
             if m not in G:
                 G[m] = {"in":set(), "out":set()}
             G[n]['out'].add(m)
@@ -85,10 +139,4 @@ def topological_sort(feed_dict):
 
     return L
 
-def forward_pass(output_node, sorted_nodes):
-    '''
-    Performs a forward pass through the list of sorted nodes
-    '''
-    for n in sorted_nodes:
-        n.forward()
-    return output_node.value
+
