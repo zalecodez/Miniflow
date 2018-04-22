@@ -156,6 +156,11 @@ def forward_and_backward(graph):
     for n in graph[::-1]:
         n.backward()
 
+def sgd_update(trainables, learning_rate=1e-2):
+    for t in trainables:
+        t.value = t.value - learning_rate*t.gradients[t]
+        
+
 def topological_sort(feed_dict):
     '''
     Sort generic nodes in topological order using Kahn's Algorithm
